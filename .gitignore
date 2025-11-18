@@ -1,8 +1,8 @@
 /venv
 app/__pycache__/main.cpython-312.pyc
 /.env
-app/schemas/__pycache__/robot.cpython-312.pyc
-app/schemas/__pycache__/robots.cpython-312.pyc
-app/services/__pycache__/robot_service.cpython-312.pyc
-app/api/v1/__pycache__/root.cpython-312.pyc
-app/api/v1/__pycache__/robot.cpython-312.pyc
+app/schemas/__pycache__/*
+app/services/__pycache__/*
+app/api/v1/__pycache__/*
+app/core/__pycache__/*
+app/clients/__pycache__/*
