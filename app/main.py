@@ -1,22 +1,32 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-from app.api.v1.robot import router as RobotRouter
-from app.api.v1.root import router as RootRouter
+from app.api.v1.router import router as MainRouter
 from contextlib import asynccontextmanager
 import httpx
+from aiokafka import AIOKafkaProducer
+import json
+from app.core.config import get_settings
+
+settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
     client = httpx.AsyncClient()
     app.state.client = client
     
+    kafka = AIOKafkaProducer(bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVER
+                             , value_serializer=lambda m: json.dumps(m).encode('utf-8'))
+    app.state.kafka = kafka
+    
+    await app.state.kafka.start()
+    
     yield
     
     await client.aclose()
+    await app.state.kafka.stop()
 
 app = FastAPI(lifespan = lifespan)
-app.include_router(RootRouter, prefix="")
-app.include_router(RobotRouter, prefix="/api/robots")
+app.include_router(MainRouter, prefix="/api/robots")
 
 @app.exception_handler(httpx.HTTPStatusError)
 async def http_status_error_handler(request: Request, exc: httpx.HTTPStatusError):
