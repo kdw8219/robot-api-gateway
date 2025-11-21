@@ -33,6 +33,7 @@ async def send_kafka_heartbeat(kafka:AIOKafkaProducer, robot_id:str, nowtime:str
         topic = settings.HEARTBEAT_TOPIC
         payload = {
             'robot_id':robot_id,
+            'is_alive':True,
             'timestamp':nowtime
         }
         result =await kafka.send_and_wait(topic, payload)
