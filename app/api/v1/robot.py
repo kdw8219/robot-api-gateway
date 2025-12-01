@@ -41,7 +41,8 @@ async def heartbeat(payload:HeartbeatInput, backgroundTasks:BackgroundTasks, cli
     #최대한 simple하게 service call만
     try:
         json_data = {
-            'robot_id':payload.robot_id
+            'robot_id':payload.robot_id,
+            'stream_ip':payload.stream_ip,
         }
         heartbeat_response = await robot_service.heartbeat_service(client, kafka, backgroundTasks, json_data)
         heartbeat_response.raise_for_status()

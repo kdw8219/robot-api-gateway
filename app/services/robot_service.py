@@ -28,12 +28,13 @@ class HeartbeatServiceError(Exception):
 class HeartbeatUserNotFoundError(Exception): # 404 Not found
     pass
 
-async def send_kafka_heartbeat(kafka:AIOKafkaProducer, robot_id:str, nowtime:str):
+async def send_kafka_heartbeat(kafka:AIOKafkaProducer, robot_id:str, nowtime:str, stream_ip:str):
     try:
         topic = settings.HEARTBEAT_TOPIC
         payload = {
             'robot_id':robot_id,
             'is_alive':True,
+            'stream_ip':stream_ip,
             'timestamp':nowtime
         }
         result =await kafka.send_and_wait(topic, payload)
@@ -53,7 +54,7 @@ async def heartbeat_service(client:httpx.AsyncClient, kafka: AIOKafkaProducer, b
         
         #using kafka to send data
         timestamp = datetime.datetime.now().isoformat()
-        backgroundTasks.add_task(send_kafka_heartbeat, kafka, data['robot_id'], timestamp) # 별도 스레드 동작
+        backgroundTasks.add_task(send_kafka_heartbeat, kafka, data['robot_id'], timestamp, data['stream_ip']) # 별도 스레드 동작
         
     except HeartbeatClientError as e:
         raise HeartbeatServiceError(e)
