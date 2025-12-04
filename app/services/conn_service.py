@@ -26,7 +26,7 @@ async def heartbeat_service(client:httpx.AsyncClient, kafka: AIOKafkaProducer, b
     try:
         url = settings.ROBOTS_URL + data['robot_id'] + '/'
         timeout = settings.ROBOTS_TIMEOUT
-        response:Response = await rest_client.request_get(client, url, payload=data, timeout=timeout)
+        response:Response = await rest_client.request_get(client, url, timeout=timeout)
         response.raise_for_status()
     except httpx.HTTPError as e:
         raise HeartbeatServiceError(e)
