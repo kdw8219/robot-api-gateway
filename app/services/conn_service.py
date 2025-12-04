@@ -1,13 +1,8 @@
 import httpx
 from fastapi.responses import Response
 from fastapi import BackgroundTasks
-import app.clients.robots_client as robots_client
-import app.clients.auth_client as auth_client
-import app.clients.robots_client as robot_client
-import app.clients.robot_stats_client as robot_stats_client
-from app.clients.robots_client import RobotClientError
-from app.clients.auth_client import AuthClientError
-from app.clients.robot_stats_client import HeartbeatClientError,HeartbeatNotFoundError
+import app.clients.rest_client as rest_client
+import app.clients.kafka_client as kafka_client
 from app.schemas.robots import RobotCheckInput
 from app.schemas.heartbeat import HeartbeatInput
 import datetime
@@ -29,15 +24,22 @@ async def heartbeat_service(client:httpx.AsyncClient, kafka: AIOKafkaProducer, b
     #해당 서비스에서 서버에 요청을 보내는 등의 처리
     #Response 처리하여 Return
     try:
-        response:Response = await robot_client.call_robot_exist(client, data=data)
+        url = settings.ROBOTS_URL + data['robot_id'] + '/'
+        timeout = settings.ROBOTS_TIMEOUT
+        response:Response = await rest_client.request_get(client, url, payload=data, timeout=timeout)
         response.raise_for_status()
-        
-        #using kafka to send data
-        timestamp = datetime.datetime.now().isoformat()
-        backgroundTasks.add_task(robot_stats_client.send_kafka_heartbeat, kafka, data['robot_id'], timestamp, data['stream_ip']) # 별도 스레드 동작
-        
-    except HeartbeatClientError as e:
+    except httpx.HTTPError as e:
         raise HeartbeatServiceError(e)
+    
+    topic = settings.HEARTBEAT_TOPIC
+    payload = {
+        'robot_id':data['robot_id'],
+        'is_alive':True,
+        'stream_ip':data['stream_ip'],
+        'timestamp':datetime.datetime.now().isoformat()
+    }
+    
+    backgroundTasks.add_task(kafka_client.send_kafka_heartbeat, kafka, topic, payload ) # 별도 스레드 동작
     
     return response
 
@@ -46,18 +48,21 @@ async def login_service(client:httpx.AsyncClient, data:RobotCheckInput):
     #해당 서비스에서 서버에 요청을 보내는 등의 처리
     #Response 처리하여 Return
     try:
-        response:Response = await robots_client.call_robot_login(client, data=data)
+        url = settings.ROBOTS_URL + settings.ROBOTS_LOGIN
+        timeout = settings.ROBOTS_TIMEOUT
+        response:Response = await rest_client.request_post(client, url, payload=data, timeout=timeout)
         response.raise_for_status()
+    except httpx.HTTPError as e:
+        raise RobotServiceError(e)
         
         #Robot Exist then
-        
-        response = await auth_client.call_auth_login(client)
-        response.raise_for_status()
-        
-    except RobotClientError as e:
-        raise RobotServiceError(e)
     
-    except AuthClientError as e:
+    try:  
+        url = settings.AUTH_URL
+        timeout = settings.AUTH_TIMEOUT
+        response = await rest_client.call_auth_login(client, url, payload={}, timeout=timeout)
+        response.raise_for_status()
+    except httpx.HTTPError as e:
         raise RobotAuthFailError(e)
     
     return response

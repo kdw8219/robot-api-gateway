@@ -2,10 +2,10 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from app.api.v1.router import router as MainRouter
 from contextlib import asynccontextmanager
-import httpx
 from aiokafka import AIOKafkaProducer
-import json
 from app.core.config import get_settings
+import httpx
+import json
 
 settings = get_settings()
 
