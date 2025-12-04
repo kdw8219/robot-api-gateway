@@ -60,7 +60,7 @@ async def login_service(client:httpx.AsyncClient, data:RobotCheckInput):
     try:  
         url = settings.AUTH_URL
         timeout = settings.AUTH_TIMEOUT
-        response = await rest_client.call_auth_login(client, url, payload={}, timeout=timeout)
+        response = await rest_client.request_post(client, url, payload={}, timeout=timeout)
         response.raise_for_status()
     except httpx.HTTPError as e:
         raise RobotAuthFailError(e)
