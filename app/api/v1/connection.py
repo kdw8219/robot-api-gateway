@@ -1,6 +1,6 @@
 from app.schemas.robots import RobotCheckInput
 from app.schemas.heartbeat import HeartbeatInput, HeartbeatOutput
-import app.services.robot_service as robot_service
+import app.services.conn_service as conn_service
 from app.schemas.login import loginOutput
 from app.schemas.error import ErrorOutput
 import httpx
@@ -16,16 +16,16 @@ async def login(payload:RobotCheckInput, client: httpx.AsyncClient):
             'robot_id':payload.robot_id,
             'robot_secret':payload.robot_secret
         }
-        login_response = await robot_service.login_service(client, json_data)
+        login_response = await conn_service.login_service(client, json_data)
         login_response.raise_for_status()
                
         data = login_response.json()
-    except robot_service.RobotAuthFailError as e:
+    except conn_service.RobotAuthFailError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication Error"
         )
-    except robot_service.RobotServiceError as e:
+    except conn_service.RobotServiceError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Service Error"
@@ -44,16 +44,16 @@ async def heartbeat(payload:HeartbeatInput, backgroundTasks:BackgroundTasks, cli
             'robot_id':payload.robot_id,
             'stream_ip':payload.stream_ip,
         }
-        heartbeat_response = await robot_service.heartbeat_service(client, kafka, backgroundTasks, json_data)
+        heartbeat_response = await conn_service.heartbeat_service(client, kafka, backgroundTasks, json_data)
         heartbeat_response.raise_for_status()
                
         data = heartbeat_response.json()
-    except robot_service.HeartbeatServiceError as e:
+    except conn_service.HeartbeatServiceError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Service Error"
         )
-    except robot_service.HeartbeatNotFoundError as e:
+    except conn_service.HeartbeatNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Not Found Exception"
@@ -61,3 +61,11 @@ async def heartbeat(payload:HeartbeatInput, backgroundTasks:BackgroundTasks, cli
         
     
     return HeartbeatOutput(result='heartbeat success')
+
+
+async def signaling():
+    pass
+
+
+async def offer_request():
+    pass
