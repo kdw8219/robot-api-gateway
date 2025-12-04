@@ -46,8 +46,6 @@ async def heartbeat(payload:HeartbeatInput, backgroundTasks:BackgroundTasks, cli
         }
         heartbeat_response = await conn_service.heartbeat_service(client, kafka, backgroundTasks, json_data)
         heartbeat_response.raise_for_status()
-               
-        data = heartbeat_response.json()
     except conn_service.HeartbeatServiceError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
